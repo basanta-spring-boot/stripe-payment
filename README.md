@@ -1,3 +1,4 @@
+```
 curl --location 'http://localhost:8080/api/v1/stripe/create-payment' \
 --header 'Content-Type: application/json' \
 --data '{
@@ -5,5 +6,5 @@ curl --location 'http://localhost:8080/api/v1/stripe/create-payment' \
     "quantity": 1,
     "currency": "USD",
     "name": "Mobile"
-}'```
+}'
 ```
