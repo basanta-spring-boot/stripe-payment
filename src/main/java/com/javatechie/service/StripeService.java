@@ -1,35 +1,31 @@
 /**
  * -----------------------------------------------------------------------------
  * This file is part of the Kreyzon Stripe open-source project.
- *
+ * <p>
  * Kreyzon Stripe is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * <p>
  * Kreyzon Stripe is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License
  * along with [Your Project Name]. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
- *
+ * <p>
  * Author: Lorenzo Orlando
  * Created on: 2023-11-12
- *
+ * <p>
  * -----------------------------------------------------------------------------
  */
 
 
 package com.javatechie.service;
 
-import com.javatechie.dto.CapturePaymentResponse;
-import com.javatechie.dto.CreatePaymentRequest;
-import com.javatechie.dto.CreatePaymentResponse;
-import com.javatechie.dto.StripeResponse;
-import com.javatechie.utils.Constant;
+import com.javatechie.dto.*;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import lombok.extern.slf4j.Slf4j;
@@ -54,24 +50,24 @@ public class StripeService {
     /**
      * Creates a new payment.
      *
-     * @param createPaymentRequest Payment request object
+     * @param productRequest build Payment request object
      * @return Payment response object
      */
-    public StripeResponse createPayment(CreatePaymentRequest createPaymentRequest) {
+    public StripeResponse createPayment(ProductRequest productRequest) {
         // Set your secret key. Remember to switch to your live secret key in production!
         Stripe.apiKey = secretKey;
 
         // Create a PaymentIntent with the order amount and currency
         SessionCreateParams.LineItem.PriceData.ProductData productData =
                 SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                        .setName(createPaymentRequest.getName())
+                        .setName(productRequest.getName())
                         .build();
 
         // Create new line item with the above product data and associated price
         SessionCreateParams.LineItem.PriceData priceData =
                 SessionCreateParams.LineItem.PriceData.builder()
-                        .setCurrency("INR")
-                        .setUnitAmount(createPaymentRequest.getAmount())
+                        .setCurrency(productRequest.getCurrency() != null ? productRequest.getCurrency() : "USD")
+                        .setUnitAmount(productRequest.getAmount())
                         .setProductData(productData)
                         .build();
 
@@ -79,7 +75,7 @@ public class StripeService {
         SessionCreateParams.LineItem lineItem =
                 SessionCreateParams
                         .LineItem.builder()
-                        .setQuantity(createPaymentRequest.getQuantity())
+                        .setQuantity(productRequest.getQuantity())
                         .setPriceData(priceData)
                         .build();
 
@@ -93,71 +89,20 @@ public class StripeService {
                         .build();
 
         // Create new session
-        Session session;
+        Session session = null;
         try {
             session = Session.create(params);
         } catch (StripeException e) {
-            e.printStackTrace();
-            return StripeResponse
-                    .builder()
-                    .status(Constant.FAILURE)
-                    .message("Payment session creation failed")
-                    .httpStatus(400)
-                    .data(null)
-                    .build();
+            //log the error
         }
-
-        CreatePaymentResponse responseData = CreatePaymentResponse
-                .builder()
-                .sessionId(session.getId())
-                .sessionUrl(session.getUrl())
-                .build();
 
         return StripeResponse
                 .builder()
-                .status(Constant.SUCCESS)
+                .status("SUCCESS")
                 .message("Payment session created successfully")
-                .httpStatus(200)
-                .data(responseData)
+                .sessionId(session.getId())
+                .sessionUrl(session.getUrl())
                 .build();
     }
 
-    public StripeResponse capturePayment(String sessionId) {
-        Stripe.apiKey = secretKey;
-
-        try {
-            Session session = Session.retrieve(sessionId);
-            String status = session.getStatus();
-
-            if (status.equalsIgnoreCase(Constant.STRIPE_SESSION_STATUS_SUCCESS)) {
-                // Handle logic for successful payment
-                log.info("Payment successfully captured.");
-            }
-
-            CapturePaymentResponse responseData = CapturePaymentResponse
-                    .builder()
-                    .sessionId(sessionId)
-                    .sessionStatus(status)
-                    .paymentStatus(session.getPaymentStatus())
-                    .build();
-
-            return StripeResponse
-                    .builder()
-                    .status(Constant.SUCCESS)
-                    .message("Payment successfully captured.")
-                    .httpStatus(200)
-                    .data(responseData)
-                    .build();
-        } catch (StripeException e) {
-            // Handle capture failure, log the error, and return false
-            e.printStackTrace();
-            return StripeResponse
-                    .builder()
-                    .status(Constant.FAILURE)
-                    .message("Payment capture failed due to a server error.")
-                    .httpStatus(500)
-                    .data(null)
-                    .build();
-        }
-    }
 }

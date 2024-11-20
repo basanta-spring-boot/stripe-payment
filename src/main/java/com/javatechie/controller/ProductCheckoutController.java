@@ -1,8 +1,9 @@
 package com.javatechie.controller;
 
-import com.javatechie.dto.CreatePaymentRequest;
 import com.javatechie.dto.ProductRequest;
 import com.javatechie.dto.StripeResponse;
+import com.javatechie.service.StripeService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,15 +11,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/product/v1")
 public class ProductCheckoutController {
+
+
+    private final StripeService stripeService;
+
+    public ProductCheckoutController(StripeService stripeService) {
+        this.stripeService = stripeService;
+    }
 
     @PostMapping("/checkout")
     public ResponseEntity<StripeResponse> checkoutProducts(@RequestBody ProductRequest productRequest) {
-        //StripeResponse stripeResponse = stripeService.createPayment(createPaymentRequest);
-//        return ResponseEntity
-//                .status(stripeResponse.getHttpStatus())
-//                .body(stripeResponse);
-        return null;
+        StripeResponse stripeResponse = stripeService.createPayment(productRequest);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(stripeResponse);
     }
 }

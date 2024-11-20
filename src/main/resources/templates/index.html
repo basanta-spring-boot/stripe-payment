@@ -165,7 +165,7 @@
                 };
 
                 // Send request to backend
-                const response = await fetch("/api/v1/stripe/create-payment", {
+                const response = await fetch("/product/v1/checkout", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -181,7 +181,7 @@
                 const stripeResponse = await response.json();
 
                 // Redirect to Stripe Checkout
-                const result = await stripe.redirectToCheckout({ sessionId: stripeResponse.data.sessionId });
+                const result = await stripe.redirectToCheckout({ sessionId: stripeResponse.sessionId });
                 if (result.error) {
                     console.error("Stripe Checkout Error:", result.error.message);
                 }
